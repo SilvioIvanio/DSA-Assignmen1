@@ -1,5 +1,4 @@
-import ballerina/grpc;
-import ballerina/log;
+import ballerina/grpc; 
 import ballerina/io;
 
 type car record {
@@ -16,7 +15,6 @@ type user record {
     string id;
     string name;
     string userType;
-
 };
 
 type reservation record {
@@ -26,19 +24,19 @@ type reservation record {
     string start_date;
     string end_date;
     float total_price;
-    string status;
+    string status="available";
 };
 
 type cartItem record{
-    string number_plate = 1;
+    string number_plate;
     string start_date;
     string end_date;
 };
 
 table<car> key(number_plate) cars = table [];
-CartItem[] cart = [];
-Reservation[] reservations = [];
-User[] users = [];
+cartItem[] cart = [];
+reservation[] reservations = [];
+user[] users = [];
 
 listener grpc:Listener ep = new (9090);
 
@@ -55,11 +53,11 @@ service "CarRentalService" on ep {
             mileage: value.car.mileage,
             status: value.car.status
         };
+
         if (cars.hasKey(newCar.number_plate)) {
             return error("Car with number plate " + value.car.number_plate + " already exists.");
-        }
+        }else{cars.add(newCar);}
         
-        cars.add(newCar);
         return {number_plate: newCar.number_plate};
     }
 
@@ -75,10 +73,9 @@ service "CarRentalService" on ep {
         };
 
         if (cars.hasKey(updatedCar.number_plate)) {
-            return error("Car with number plate " + updatedCar.number_plate + " not found.");
-        }
+            return error("Car with number plate " + updatedCar.number_plate + " already exists.");
+        }else{cars.put(updatedCar);}
 
-        cars.put(updatedCar);
 
         return {
             number_plate: updatedCar.number_plate,
@@ -95,9 +92,8 @@ service "CarRentalService" on ep {
     remote function RemoveCar(RemoveCarRequest value) returns RemoveCarResponse|error {
          if (!cars.hasKey(value.number_plate)) {
             return error("Car with ID " + value.number_plate +" does not exist.");
-        }else{
-            car removedCar = cars.remove(value.number_plate);
-        }
+        }else{car removedCar = cars.remove(value.number_plate);}
+
        Car[] remainingCars = [];
         foreach car c in cars {
             remainingCars.push({
@@ -120,9 +116,7 @@ service "CarRentalService" on ep {
         if reservation.status == "confirmed" {
             booked.push(reservation);
         }
-
     }
-
     return {reservations: booked};
     }
 
@@ -162,12 +156,11 @@ service "CarRentalService" on ep {
         return ();
     }
     
-
 remote function PlaceReservation(PlaceReservationRequest value) returns PlaceReservationResponse|error {
     if cart.length() == 0 {
         return error("Cart is empty");
     } else {
-        Reservation newReservation = {
+        reservation newReservation = {
             reservation_id: value.reservation.reservation_id,
             user_id: value.reservation.user_id,
             car_number_plate: value.reservation.car_number_plate,
@@ -177,15 +170,19 @@ remote function PlaceReservation(PlaceReservationRequest value) returns PlaceRes
             status: "confirmed"
         };
         reservations.push(newReservation);
-        return { reservation_id: newReservation.reservation_id };
+        return {reservation_id: newReservation.reservation_id};
     }
 }
 
-    remote function CreateUsers(stream<User, grpc:Error?> clientStream) returns CreateUsersResponse|error {
+remote function CreateUsers(stream<User, grpc:Error?> clientStream) returns CreateUsersResponse|error {
           int userCount = 0;
         
         error? result = clientStream.forEach(function(User user) {
-            users.push(user);
+            users.push({    
+                id: user.id,
+                name: user.name,
+                userType: user.userType
+            });
             userCount += 1;
         });
         
@@ -197,7 +194,7 @@ remote function PlaceReservation(PlaceReservationRequest value) returns PlaceRes
     }
     
 
-    remote function ListAvailableCars(ListAvailableCarsRequest value) returns stream<Car, error?>|error {
+remote function ListAvailableCars(ListAvailableCarsRequest value) returns stream<Car, error?> {
         car[] carsAvailable = [];
 
     foreach var i in cars {
@@ -213,7 +210,8 @@ remote function PlaceReservation(PlaceReservationRequest value) returns PlaceRes
             });
         }
 
-        return {cars: carsAvailable};
+        stream<Car, error?> carStream = carsAvailable.toStream();
+        return carStream;
     }
 }
 }
