@@ -268,7 +268,7 @@ remote function list_reservations(Empty request) returns stream<Reservation, err
 
 // Helper functions
 function isValidDateFormat(string date) returns boolean {
-    string:RegExp datePattern = re ^\d{2}-\d{2}-\d{4}$;
+    string:RegExp datePattern = re `^\d{2}-\d{2}-\d{4}$`;
     return datePattern.isFullMatch(date);
 }
 
