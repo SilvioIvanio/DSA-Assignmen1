@@ -54,3 +54,19 @@ function listAvailableCars(CarRentalServiceClient carClient) returns error? {
         io:println("No available cars found.");
     }
 }
+function searchCar(CarRentalServiceClient carClient) returns error? {
+    io:println("\n SEARCH CAR ");
+    string plate = io:readln("Enter plate number: ");
+
+    SearchCarResponse response = check carClient->search_car({plate: plate});
+
+    if response.found {
+        io:println("\nCar found!");
+        io:println("Make: ", response.car.make);
+        io:println("Model: ", response.car.model);
+        io:println("Year: ", response.car.year.toString());
+        io:println("Daily Price: $", response.car.daily_price.toString());
+        io:println("Status: ", response.car.status);
+    } else {
+        io:println("Car not found: ", response.message);
+    }
