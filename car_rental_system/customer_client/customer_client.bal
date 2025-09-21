@@ -7,9 +7,9 @@ public function main() returns error? {
 
     CarRentalServiceClient carClient = check new ("http://localhost:9090");
 
-    //  Customer Menu 
+    // ========== Customer Menu ==========
     while true {
-        io:println("\n CUSTOMER MENU ");
+        io:println("\n=== CUSTOMER MENU ===");
         io:println("1. List available cars");
         io:println("2. Search car by plate");
         io:println("3. Add car to cart");
@@ -32,10 +32,10 @@ public function main() returns error? {
     }
 }
 
-//Customer Operations 
+// ========== Customer Operations ==========
 
 function listAvailableCars(CarRentalServiceClient carClient) returns error? {
-    io:println("\n AVAILABLE CARS ");
+    io:println("\n--- AVAILABLE CARS ---");
     string filter = io:readln("Enter filter (or press Enter for all): ");
 
     stream<Car, grpc:Error?> carStream = check carClient->list_available_cars({filter: filter});
@@ -54,8 +54,9 @@ function listAvailableCars(CarRentalServiceClient carClient) returns error? {
         io:println("No available cars found.");
     }
 }
+
 function searchCar(CarRentalServiceClient carClient) returns error? {
-    io:println("\n SEARCH CAR ");
+    io:println("\n--- SEARCH CAR ---");
     string plate = io:readln("Enter plate number: ");
 
     SearchCarResponse response = check carClient->search_car({plate: plate});
@@ -71,8 +72,9 @@ function searchCar(CarRentalServiceClient carClient) returns error? {
         io:println("Car not found: ", response.message);
     }
 }
+
 function addToCart(CarRentalServiceClient carClient) returns error? {
-    io:println("\n ADD TO CART ");
+    io:println("\n--- ADD TO CART ---");
     string plate = io:readln("Enter car plate: ");
     string startDate = io:readln("Start date (DD-MM-YYYY): ");
     string endDate = io:readln("End date (DD-MM-YYYY): ");
@@ -89,14 +91,23 @@ function addToCart(CarRentalServiceClient carClient) returns error? {
     } else {
         io:println("Failed: ", response.message);
     }
+}
 
-   
+function placeReservation(CarRentalServiceClient carClient) returns error? {
+    io:println("\n--- PLACE RESERVATION ---");
+    string confirm = io:readln("Confirm reservation from your cart? (y/n): ");
+
+    if confirm.toLowerAscii() != "y" {
+        io:println("Reservation cancelled.");
+        return;
+    }
+
     PlaceReservationResponse response = check carClient->place_reservation({
         user_id: currentUserId
     });
 
     if response.success {
-        io:println("\n RESERVATION CONFIRMED ");
+        io:println("\n=== RESERVATION CONFIRMED ===");
         io:println("Reservation ID: ", response.reservation.reservation_id);
         io:println("Total Price: N$", response.reservation.total_price.toString());
         io:println("Date: ", response.reservation.reservation_date);
