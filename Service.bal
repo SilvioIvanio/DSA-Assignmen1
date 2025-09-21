@@ -1,3 +1,51 @@
+import ballerina/http;
+import ballerina/time;
+
+type Component record {
+    string componentId;
+    string name;
+    string description;
+};
+
+type Schedule record {
+    string scheduleId;
+    string frequency; // "QUARTERLY", "YEARLY", etc.
+    string nextDueDate; 
+    string description;
+};
+
+type Task record {
+    string taskId;
+    string description;
+    // "PENDING", "IN_PROGRESS", "COMPLETED"
+    string status; 
+};
+
+type WorkOrder record {
+    string workOrderId;
+    string description;
+    // "OPEN", "IN_PROGRESS", "CLOSED"
+    string status; 
+    string dateOpened;
+    string? dateClosed;
+    Task[] tasks;
+};
+
+type Asset record {
+    readonly string assetTag;
+    string name;
+    string faculty;
+    string department;
+    string status; // "ACTIVE", "UNDER_REPAIR", "DISPOSED"
+    string acquiredDate;
+    map<Component> components;
+    map<Schedule> schedules;
+    map<WorkOrder> workOrders;
+};
+
+table<Asset> key(assetTag) assetsTable = table [];
+
+service /asset_management on new http:Listener(8081) {
 // Add component to asset
     resource function post assets/[string assetTag]/components(@http:Payload Component component) returns Component|error {
         Asset? assetOpt = assetsTable[assetTag];

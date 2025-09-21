@@ -1,4 +1,49 @@
- "8" => {
+ import ballerina/io;
+import ballerina/http;
+
+type Component record {
+    string componentId;
+    string name;
+    string description;
+};
+
+type Schedule record {
+    string scheduleId;
+    string frequency;
+    string nextDueDate;
+    string description;
+};
+
+type Task record {
+    string taskId;
+    string description;
+    string status;
+};
+
+type WorkOrder record {
+    string workOrderId;
+    string description;
+    string status;
+    string dateOpened;
+    string? dateClosed;
+    Task[] tasks;
+};
+
+type Asset record {
+    readonly string assetTag;
+    string name;
+    string faculty;
+    string department;
+    string status;
+    string acquiredDate;
+    map<Component> components;
+    map<Schedule> schedules;
+    map<WorkOrder> workOrders;
+};
+
+http:Client client_asset = check new ("http://localhost:8081/asset_management");
+
+"8" => {
             io:println("⚙️ Component Management");
             io:println("1. Add a component");
             io:println("2. Delete a component");
