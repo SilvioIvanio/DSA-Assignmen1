@@ -117,5 +117,5 @@ function placeReservation(CarRentalServiceClient carClient) returns error? {
         }
     } else {
         io:println("Failed: ", response.message);
-    }
+    }
 }
