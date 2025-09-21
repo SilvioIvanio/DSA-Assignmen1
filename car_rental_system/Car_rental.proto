@@ -1,112 +1,138 @@
 syntax = "proto3";
 
-package Car_rental;
+package car_rental;
 
-import "google/protobuf/empty.proto";
+// Enum for car status
+enum CarStatus {
+    AVAILABLE = 0;
+    UNAVAILABLE = 1;
+}
 
-message User{
-    string userId = 1;
+// Enum for user role
+enum UserRole {
+    CUSTOMER = 0;
+    ADMIN = 1;
+}
+
+// Car message
+message Car {
+    string make = 1;
+    string model = 2;
+    int32 year = 3;
+    double daily_price = 4;
+    int32 mileage = 5;
+    string plate = 6;
+    CarStatus status = 7;
+}
+
+// User message
+message User {
+    string user_id = 1;
     string name = 2;
-    string userType = 3; // "Admin" or "Customer"
+    string email = 3;
+    UserRole role = 4;
 }
 
-message Car{
-    string number_plate = 1;
-    string make = 2;
-    string model = 3;
-    int32 year = 4;
-    float daily_price = 5;
-    int32 mileage = 6;
-    string status = 7;
+// Cart item message
+message CartItem {
+    string plate = 1;
+    string start_date = 2;  // DD-MM-YYYY format
+    string end_date = 3;    // DD-MM-YYYY format
 }
 
-message CartItem{
-    string number_plate = 1;
-    string start_date = 2;
-    string end_date = 3;
+// Reservation message
+message Reservation {
+    string reservation_id = 1;
+    string user_id = 2;
+    repeated CartItem items = 3;
+    double total_price = 4;
+    string reservation_date = 5;
 }
 
-message Reservation{
-    string reservationId = 1;
-    string customerId = 2;
-    string number_plate = 3;
-    string start_date = 4;
-    string end_date = 5;
-    float price = 6;
-    string confirm_status = 7;
-}
-
-message CreateUsersResponse{
-    string message = 1;
-}
-
-message AddCarRequest{
+// Request and Response messages
+message AddCarRequest {
     Car car = 1;
 }
 
-message AddCarResponse{
-    string number_plate = 1;
-}
-
-message UpdateCarRequest{
-    string number_plate = 1;
-    Car updatedCar = 2;
-}
-
-message RemoveCarRequest{
-    string number_plate =1;
-}
-
-message RemoveCarResponse{
-    repeated Car cars = 1;
-}
-
-message ListAvailableCarsRequest{
-    string filter_text = 1;
-}
-
-message SearchCarRequest{
-    string number_plate = 1;
-}
-
-message SearchCarResponse{
-    Car car = 1;
+message AddCarResponse {
+    string plate = 1;
     string message = 2;
 }
 
-message AddToCartRequest{
-    CartItem cart_item = 1;
+message CreateUsersResponse {
+    int32 users_created = 1;
+    string message = 2;
 }
 
-message PlaceReservationRequest{
-    string customerId = 1;
+message UpdateCarRequest {
+    string plate = 1;
+    Car updated_car = 2;
 }
 
-message PlaceReservationResponse{
-    string message = 1;
+message UpdateCarResponse {
+    bool success = 1;
+    string message = 2;
 }
 
-message ListAllReservationsRequest{
-    string adminId = 1;
+message RemoveCarRequest {
+    string plate = 1;
 }
 
-message ListAllReservationsResponse{
-    repeated Reservation reservations = 1;
+message RemoveCarResponse {
+    repeated Car cars = 1;
+    string message = 2;
 }
 
-// Define the car rental service
-service CarRentalService{
-    rpc CreateUsers(stream User) returns (CreateUsersResponse);
+message ListAvailableCarsRequest {
+    string filter = 1;  // Optional filter text
+}
 
-//Admin services
-rpc AddCar(AddCarRequest) returns (AddCarResponse);
-rpc UpdateCar(UpdateCarRequest) returns (Car);
-rpc RemoveCar(RemoveCarRequest) returns (RemoveCarResponse);
-rpc ListAllReservations(ListAllReservationsRequest) returns (ListAllReservationsResponse);
+message SearchCarRequest {
+    string plate = 1;
+}
 
-//Customers services
-rpc ListAvailableCars(ListAvailableCarsRequest) returns (stream Car);
-rpc SearchCar(SearchCarRequest) returns (SearchCarResponse);
-rpc AddToCart(AddToCartRequest) returns (google.protobuf.Empty);
-rpc PlaceReservation(PlaceReservationRequest) returns (PlaceReservationResponse);
+message SearchCarResponse {
+    Car car = 1;
+    bool found = 2;
+    string message = 3;
+}
+
+message AddToCartRequest {
+    string user_id = 1;
+    string plate = 2;
+    string start_date = 3;  // DD-MM-YYYY
+    string end_date = 4;    // DD-MM-YYYY
+}
+
+message AddToCartResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message PlaceReservationRequest {
+    string user_id = 1;
+}
+
+message PlaceReservationResponse {
+    Reservation reservation = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+message Empty {}
+
+// Service definition
+service CarRentalService {
+    // Admin operations
+    rpc add_car(AddCarRequest) returns (AddCarResponse);
+    rpc create_users(stream User) returns (CreateUsersResponse);
+    rpc update_car(UpdateCarRequest) returns (UpdateCarResponse);
+    rpc remove_car(RemoveCarRequest) returns (RemoveCarResponse);
+    rpc list_reservations(Empty) returns (stream Reservation);
+    
+    // Customer operations
+    rpc list_available_cars(ListAvailableCarsRequest) returns (stream Car);
+    rpc search_car(SearchCarRequest) returns (SearchCarResponse);
+    rpc add_to_cart(AddToCartRequest) returns (AddToCartResponse);
+    rpc place_reservation(PlaceReservationRequest) returns (PlaceReservationResponse);
 }
