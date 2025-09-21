@@ -35,7 +35,7 @@ public function main() returns error? {
 //Customer Operations 
 
 function listAvailableCars(CarRentalServiceClient carClient) returns error? {
-    io:println("\n--- AVAILABLE CARS ---");
+    io:println("\n AVAILABLE CARS ");
     string filter = io:readln("Enter filter (or press Enter for all): ");
 
     stream<Car, grpc:Error?> carStream = check carClient->list_available_cars({filter: filter});
@@ -72,7 +72,7 @@ function searchCar(CarRentalServiceClient carClient) returns error? {
     }
 }
 function addToCart(CarRentalServiceClient carClient) returns error? {
-    io:println("\n--- ADD TO CART ---");
+    io:println("\n ADD TO CART ");
     string plate = io:readln("Enter car plate: ");
     string startDate = io:readln("Start date (DD-MM-YYYY): ");
     string endDate = io:readln("End date (DD-MM-YYYY): ");
@@ -89,4 +89,22 @@ function addToCart(CarRentalServiceClient carClient) returns error? {
     } else {
         io:println("Failed: ", response.message);
     }
+
+   
+    PlaceReservationResponse response = check carClient->place_reservation({
+        user_id: currentUserId
+    });
+
+    if response.success {
+        io:println("\n RESERVATION CONFIRMED ");
+        io:println("Reservation ID: ", response.reservation.reservation_id);
+        io:println("Total Price: N$", response.reservation.total_price.toString());
+        io:println("Date: ", response.reservation.reservation_date);
+        io:println("\nItems:");
+        foreach CartItem item in response.reservation.items {
+            io:println("  - ", item.plate, " from ", item.start_date, " to ", item.end_date);
+        }
+    } else {
+        io:println("Failed: ", response.message);
+    }
 }
