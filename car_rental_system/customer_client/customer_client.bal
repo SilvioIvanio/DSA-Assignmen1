@@ -1,48 +1,121 @@
+import ballerina/grpc;
 import ballerina/io;
 
-CarRentalServiceClient ep = check new ("http://localhost:9090");
+string currentUserId = "";
 
 public function main() returns error? {
-    AddCarRequest add_carRequest = {car: {make: "ballerina", model: "ballerina", year: 1, daily_price: 1, mileage: 1, plate: "ballerina", status: "AVAILABLE"}};
-    AddCarResponse add_carResponse = check ep->add_car(add_carRequest);
-    io:println(add_carResponse);
 
-    UpdateCarRequest update_carRequest = {plate: "ballerina", updated_car: {make: "ballerina", model: "ballerina", year: 1, daily_price: 1, mileage: 1, plate: "ballerina", status: "AVAILABLE"}};
-    UpdateCarResponse update_carResponse = check ep->update_car(update_carRequest);
-    io:println(update_carResponse);
+    CarRentalServiceClient carClient = check new ("http://localhost:9090");
 
-    RemoveCarRequest remove_carRequest = {plate: "ballerina"};
-    RemoveCarResponse remove_carResponse = check ep->remove_car(remove_carRequest);
-    io:println(remove_carResponse);
+    // ========== Customer Menu ==========
+    while true {
+        io:println("\n=== CUSTOMER MENU ===");
+        io:println("1. List available cars");
+        io:println("2. Search car by plate");
+        io:println("3. Add car to cart");
+        io:println("4. Place reservation");
+        io:println("5. Exit");
 
-    SearchCarRequest search_carRequest = {plate: "ballerina"};
-    SearchCarResponse search_carResponse = check ep->search_car(search_carRequest);
-    io:println(search_carResponse);
+        string choice = io:readln("Select option: ");
 
-    AddToCartRequest add_to_cartRequest = {user_id: "ballerina", plate: "ballerina", start_date: "ballerina", end_date: "ballerina"};
-    AddToCartResponse add_to_cartResponse = check ep->add_to_cart(add_to_cartRequest);
-    io:println(add_to_cartResponse);
+        match choice {
+            "1" => { check listAvailableCars(carClient); }
+            "2" => { check searchCar(carClient); }
+            "3" => { check addToCart(carClient); }
+            "4" => { check placeReservation(carClient); }
+            "5" => {
+                io:println("Thank you for using our service!");
+                return;
+            }
+            _ => { io:println("Invalid choice!"); }
+        }
+    }
+}
 
-    PlaceReservationRequest place_reservationRequest = {user_id: "ballerina"};
-    PlaceReservationResponse place_reservationResponse = check ep->place_reservation(place_reservationRequest);
-    io:println(place_reservationResponse);
+// ========== Customer Operations ==========
 
-    Empty list_reservationsRequest = {};
-    stream<Reservation, error?> list_reservationsResponse = check ep->list_reservations(list_reservationsRequest);
-    check list_reservationsResponse.forEach(function(Reservation value) {
-        io:println(value);
+function listAvailableCars(CarRentalServiceClient carClient) returns error? {
+    io:println("\n--- AVAILABLE CARS ---");
+    string filter = io:readln("Enter filter (or press Enter for all): ");
+
+    stream<Car, grpc:Error?> carStream = check carClient->list_available_cars({filter: filter});
+    int count = 0;
+
+    check from Car car in carStream
+        do {
+            count += 1;
+            io:println("\n", count.toString(), ". ", car.make, " ", car.model, " (", car.year.toString(), ")");
+            io:println("   Plate: ", car.plate);
+            io:println("   Daily Price: N$", car.daily_price.toString());
+            io:println("   Mileage: ", car.mileage.toString(), " km");
+        };
+
+    if count == 0 {
+        io:println("No available cars found.");
+    }
+}
+
+function searchCar(CarRentalServiceClient carClient) returns error? {
+    io:println("\n--- SEARCH CAR ---");
+    string plate = io:readln("Enter plate number: ");
+
+    SearchCarResponse response = check carClient->search_car({plate: plate});
+
+    if response.found {
+        io:println("\nCar found!");
+        io:println("Make: ", response.car.make);
+        io:println("Model: ", response.car.model);
+        io:println("Year: ", response.car.year.toString());
+        io:println("Daily Price: $", response.car.daily_price.toString());
+        io:println("Status: ", response.car.status);
+    } else {
+        io:println("Car not found: ", response.message);
+    }
+}
+
+function addToCart(CarRentalServiceClient carClient) returns error? {
+    io:println("\n--- ADD TO CART ---");
+    string plate = io:readln("Enter car plate: ");
+    string startDate = io:readln("Start date (DD-MM-YYYY): ");
+    string endDate = io:readln("End date (DD-MM-YYYY): ");
+
+    AddToCartResponse response = check carClient->add_to_cart({
+        user_id: currentUserId,
+        plate: plate,
+        start_date: startDate,
+        end_date: endDate
     });
 
-    ListAvailableCarsRequest list_available_carsRequest = {filter: "ballerina"};
-    stream<Car, error?> list_available_carsResponse = check ep->list_available_cars(list_available_carsRequest);
-    check list_available_carsResponse.forEach(function(Car value) {
-        io:println(value);
+    if response.success {
+        io:println("Success: ", response.message);
+    } else {
+        io:println("Failed: ", response.message);
+    }
+}
+
+function placeReservation(CarRentalServiceClient carClient) returns error? {
+    io:println("\n--- PLACE RESERVATION ---");
+    string confirm = io:readln("Confirm reservation from your cart? (y/n): ");
+
+    if confirm.toLowerAscii() != "y" {
+        io:println("Reservation cancelled.");
+        return;
+    }
+
+    PlaceReservationResponse response = check carClient->place_reservation({
+        user_id: currentUserId
     });
 
-    User create_usersRequest = {user_id: "ballerina", name: "ballerina", email: "ballerina", role: "CUSTOMER"};
-    Create_usersStreamingClient create_usersStreamingClient = check ep->create_users();
-    check create_usersStreamingClient->sendUser(create_usersRequest);
-    check create_usersStreamingClient->complete();
-    CreateUsersResponse? create_usersResponse = check create_usersStreamingClient->receiveCreateUsersResponse();
-    io:println(create_usersResponse);
+    if response.success {
+        io:println("\n=== RESERVATION CONFIRMED ===");
+        io:println("Reservation ID: ", response.reservation.reservation_id);
+        io:println("Total Price: N$", response.reservation.total_price.toString());
+        io:println("Date: ", response.reservation.reservation_date);
+        io:println("\nItems:");
+        foreach CartItem item in response.reservation.items {
+            io:println("  - ", item.plate, " from ", item.start_date, " to ", item.end_date);
+        }
+    } else {
+        io:println("Failed: ", response.message);
+    }
 }
