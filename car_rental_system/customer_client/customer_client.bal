@@ -70,3 +70,23 @@ function searchCar(CarRentalServiceClient carClient) returns error? {
     } else {
         io:println("Car not found: ", response.message);
     }
+}
+function addToCart(CarRentalServiceClient carClient) returns error? {
+    io:println("\n--- ADD TO CART ---");
+    string plate = io:readln("Enter car plate: ");
+    string startDate = io:readln("Start date (DD-MM-YYYY): ");
+    string endDate = io:readln("End date (DD-MM-YYYY): ");
+
+    AddToCartResponse response = check carClient->add_to_cart({
+        user_id: currentUserId,
+        plate: plate,
+        start_date: startDate,
+        end_date: endDate
+    });
+
+    if response.success {
+        io:println("Success: ", response.message);
+    } else {
+        io:println("Failed: ", response.message);
+    }
+}
