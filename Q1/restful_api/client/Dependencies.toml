@@ -160,15 +160,6 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
-name = "lang.error"
-version = "0.0.0"
-scope = "testOnly"
-dependencies = [
-	{org = "ballerina", name = "jballerina.java"}
-]
-
-[[package]]
-org = "ballerina"
 name = "lang.int"
 version = "0.0.0"
 dependencies = [
@@ -218,7 +209,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "log"
-version = "2.13.0"
+version = "2.12.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -270,25 +261,10 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "task"
-version = "2.11.0"
+version = "2.7.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "time"},
-	{org = "ballerina", name = "uuid"}
-]
-
-[[package]]
-org = "ballerina"
-name = "test"
-version = "0.0.0"
-scope = "testOnly"
-dependencies = [
-	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.array"},
-	{org = "ballerina", name = "lang.error"}
-]
-modules = [
-	{org = "ballerina", packageName = "test", moduleName = "test"}
+	{org = "ballerina", name = "time"}
 ]
 
 [[package]]
@@ -308,17 +284,6 @@ dependencies = [
 ]
 
 [[package]]
-org = "ballerina"
-name = "uuid"
-version = "1.10.0"
-dependencies = [
-	{org = "ballerina", name = "crypto"},
-	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.int"},
-	{org = "ballerina", name = "time"}
-]
-
-[[package]]
 org = "ballerinai"
 name = "observe"
 version = "0.0.0"
@@ -332,15 +297,14 @@ modules = [
 
 [[package]]
 org = "pascalmtk"
-name = "service"
+name = "client"
 version = "0.1.0"
 dependencies = [
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "io"},
-	{org = "ballerina", name = "test"},
 	{org = "ballerinai", name = "observe"}
 ]
 modules = [
-	{org = "pascalmtk", packageName = "service", moduleName = "service"}
+	{org = "pascalmtk", packageName = "client", moduleName = "client"}
 ]
 
